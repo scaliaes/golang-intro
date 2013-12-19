@@ -1,0 +1,459 @@
+Introducción a Google Go
+13 de diciembre 2013
+
+Antonio Nicolás Pina
+Scalia
+antonio@scalia.es
+http://scalia.es/
+@ANPez
+@scalia_es
+
+* ¿Por qué prefieres un lenguaje de scripting?
+
+* Razones para usar un lenguaje de scripting
+- *Velocidad*de*desarrollo.*
+- Expresividad.
+- No hay necesidad de compilación.
+- Recolección de basura.
+- Abstracciones de alto nivel.
+- ¿Despliegue?
+
+* Razones para usar un lenguaje compilado
+- *Velocidad*de*ejecución.*
+- Tipado estático.
+- Comprobaciones en tiempo de compilación.
+- ¿Despliegue?
+
+* Y si...
+- *Legible* y claro.
+- Lenguaje compilado, pero de muy rápida compilación.
+- Comprobaciones *estrictas* en tiempo de compilación.
+- Fuertemente tipado.
+- Recolección de basura.
+- *Facilidad*de*despliegue.*
+- Y muchas otras particularidades inusuales en los lenguajes más populares, útiles para el desarrollador.
+
+* Go 1.0 publicado en Marzo de 2012
+.image intro/images/gopherrun.png 291 270
+
+* Golang, un nuevo lenguaje
+- No ha habido grandes avances en lenguajes de programación... ¡en casi una década!
+- PHP nació en el año 1995
+- Ruby también fue creado en 1995
+- Node.js...
+
+* Go te ayuda a desarrollar correctamente
+- Sintaxis concisa.
+- Diseñado para ser eficiente en tiempo de desarrollo.
+- Rápido en tiempo de ejecución.
+- Es un lenguaje concurrente, y con un buen soporte para paralelización.
+- Soporta tests y benchmarks de forma nativa.
+
+* Go te ayuda a desarrollar cómodamente
+- Soporta nativamente Unicode.
+- Recolector de basura.
+- Devolución de múltiples valores.
+- Las funciones son tipos de primer orden.
+- Elimina lo que muchos consideran necesario: objetos e interfaces. En su lugar, presenta alternativas diferentes.
+
+* Go te obliga a programar bien
+- Comprobaciones *muy* estrictas en tiempo de compilación.
+- Comprobación estricta de tipos, no existen "tipos compatibles".
+- No existe el tipo "float".
+- Desde Go 1.0, no se garantiza el orden de iteración sobre mapas.
+
+* Go te insta a que tu código sea legible.
+- No existen excepciones, sólo errores excepcionales.
+- No se permiten imports o variables no usadas.
+- Uso de punteros sin aritmética de punteros.
+- Se prohiben expresiones que puedan resultar en código ilegible. Por ejemplo:
+  var2 = var++
+
+.image intro/images/gopherbw.png 200 200
+
+* ¿Cuál es tu lenguaje favorito?
+
+* Un ejemplo de C
+  int (*(*(*f3)(int))(double))(float);
+
+            f3                           -- f3
+           *f3                           -- is a pointer
+          (*f3)(   )                     -- to a function
+          (*f3)(int)                     --   taking an int parameter
+         *(*f3)(int)                     --   returning a pointer
+        (*(*f3)(int))(      )            --   to a function
+        (*(*f3)(int))(double)            --     taking a double parameter
+       *(*(*f3)(int))(double)            --     returning a pointer
+      (*(*(*f3)(int))(double))(     )    --     to a function
+      (*(*(*f3)(int))(double))(float)    --       taking a float parameter
+  int (*(*(*f3)(int))(double))(float)    --       returning int
+
+.link http://stackoverflow.com/questions/10758811/c-syntax-for-functions-returning-function-pointers StackOverflow
+
+* 
+.image intro/images/wat1.jpg 500 686
+
+* El mismo ejemplo en Go
+  func (int) func(float64) func(float32) int
+
+vs
+
+  int (*(*(*f3)(int))(double))(float)
+
+* Un ejemplo de Java
+.code intro/code/bufferedread.java /STARTREADFILE/,/STOPREADFILE/
+
+* El mismo ejemplo en Go
+  data, err := ioutil.ReadFile("file")
+
+Sin usar ioutil:
+
+.code intro/code/bufferedread.go /STARTREADFILE/,/STOPREADFILE/
+
+* Golang soporta Unicode totalmente
+.play intro/code/unicode.go
+
+* 
+.image intro/images/srsly.jpg
+
+* Tipos de datos en Go
+.image intro/images/gopherhat.jpg 200 158
+
+* Tipos numéricos
+
+* int y bool
+  int, uint, int8, uint8, int16, uint16, int32, uint32, int64, uint64.
+- Desde Go 1.1, _int_ es de 64 bits cuando se ejecuta en CPU de 64 bits.
+- Personalmente, me gusta más especificar siempre el tamaño.
+
+  var x uint32 = 3
+
+- O también:
+  x := uint32(3)
+
+- Para booleanos: _true_, _false_ y operadores _a_la_C_.
+
+* Ejemplos
+
+Ejemplo incorrecto
+
+.play intro/code/int.go /STARTMAIN/,/STOPMAIN/
+
+¿Y ahora?
+
+.play intro/code/int64.go /STARTMAIN/,/STOPMAIN/
+
+* Más ejemplos
+
+.play intro/code/bool.go /STARTMAIN/,/STOPMAIN/
+
+De otra forma:
+
+.play intro/code/switch.go /STARTMAIN/,/STOPMAIN/
+
+* Otros tipos numéricos
+- No se define un tipo _float_. En su lugar, existen _float32_ y _float64_
+
+  var (
+    x float32 = 2
+    m float64 = 6.023e23
+  )
+
+- Números complejos. Si, Go soporta números complejos: _complex64_ y _complex128_.
+
+.play intro/code/complex128.go /STARTMAIN/,/STOPMAIN/
+
+* array
+
+* Array
+- Se puede declarar un _array_ de cualquier tipo, nativo o no.
+  var (
+    x [5]int32
+    y [10][2]interface{}
+  )
+
+- No son referencias, por lo que se copia la memoria al pasarlos a una función.
+- *Recuerda*: Go *siempre* pasa los parámetros por valor.
+- *Recuerda*: Go *siempre* inicializa *todo* a su zero-value.
+
+* Array
+- Nos podemos ahorrar escribir el tamaño usando "..." cuando se especifica un literal.
+.play intro/code/array1.go /STARTMAIN/,/STOPMAIN/
+
+- ¡Re-slicing!
+.play intro/code/array2.go /STARTMAIN/,/STOPMAIN/
+
+- Dado que el tamaño se especifica en la declaración, son *inmutables*.
+
+* 
+.image intro/images/orly.jpg
+
+* Array o slice, esa es la cuestión
+- Go proporciona un _wrapper_ sobre los arrays inmutables, lo que llama *slice*.
+  var x []int = make([]int, 3)
+  y := []int{1, 2, 3}
+
+vs
+
+  var x [3]int
+  y := [...]int{1, 2, 3}
+
+- Un slice es una referencia al array subyacente, por lo que siguen siendo inmutables.
+- Dado que son una referencia, su zero-value es *nil*.
+- Para crear un slice, se puede utilizar un literal, o bien utilizar la función *make()*.
+
+* Slice
+- Utilizando *make()*, podemos especificar un tamaño y una capacidad inicial.
+- Tamaño: Número de elementos que el slice contiene actualmente.
+- Capacidad: tamaño del array subyacente.
+
+  x := make([]float32, 3, 10)
+
+- Por defecto, la capacidad se supone igual al tamaño, por lo que no es necesario indicarla.
+- Para añadir uno o varios elementos, se utiliza la función *append*:
+  x = append(x, 2)
+  x = append(x, 3, 4, 5)
+
+* Diferencia entre array y slice
+- Un slice también puede ser "re-sliced". Esto no cambia mas que el puntero hacia el array, no copia memoria.
+- Ambos se comportan como se espera con las funciones *len*, *cap* y *copy*.
+- Pero además, un slice nos ofrece la posibilidad de añadir elementos, ampliando la capacidad del array. Pista: *realloc*.
+
+.image intro/images/slices.png
+
+* map
+
+* Mapas
+- Como un HashMap de Java, o un Hash de Ruby.
+- _Mapea_ cualquier valor _comparable_ a cualquier cosa.
+  var m map[string]interface{}
+- Aquí, es clásico utilizar *interface{}* del mismo modo que *Object* en Java.
+- Al igual que los array y slices, son iterables. ¡Pero *ojo*! *NO* se garantiza el orden.
+- Del mismo modo que los _slices_, su zero-value es *nil*.
+
+.play intro/code/map1.go /STARTMAIN/,/STOPMAIN/
+
+* Mapas
+.play intro/code/map2.go /STARTMAIN/,/STOPMAIN/
+
+O podemos comprobar si existe un mapping.
+
+.play intro/code/map3.go /STARTMAIN/,/STOPMAIN/
+
+* string
+
+* string
+- Los _strings_ son inmutables.
+  var variable string = "cadena"
+- En el fondo, no es más que un []byte, por lo que puede contener *cualquier* contenido arbitrario.
+- Como todos los tipos compuestos en Go, es iterable.
+- En Go no hay _char_, hay _rune_, que representan codepoints unicode. 
+- _Rune_ no es más que un alias de _int32_.
+
+* Operadores
+- Los _string_'s *no* son referencias. *Recuerda*: sólo slices y maps lo son.
+- Operaciones habituales a través de los paquetes _string_ y _unicode_.
+- Literales con "cadena" o `cadena`.
+
+.play intro/code/string1.go /STARTMAIN/,/STOPMAIN/
+
+- Se puede iterar sobre ellos, rune a rune.
+
+.play intro/code/string2.go /STARTMAIN/,/STOPMAIN/
+
+* Probablemente, a estas alturas estáis...
+.image intro/images/comeon.png 427 448
+
+* Pero pronto estaréis...
+.image intro/images/arcoiris.jpg
+
+* O eso voy a intentar...
+.image intro/images/challenge_accepted.png 392 500
+
+* Las mejores cosas de Go
+
+* Duck typing
+- "Si camina como un pato, nada como un pato y suena como un pato, es un pato."
+  type Stringer interface {
+    String() string
+  }
+
+- Cualquier tipo que implemente ese método "de facto", puede ser utilizado como un Stringer.
+
+.play intro/code/stringer.go /STARTMAIN/,/STOPMAIN/
+
+* Structs
+- Combinado con los zero-values, los literales de structs son muy prácticos.
+  type resultType struct {
+    Impressions  uint64  `json:"impressions"`
+    Views        uint64  `json:"views"`
+    Interactions float32 `json:"interactions,omitempty"`
+  }
+  ret := resultType{Impressions:imp}
+
+- *Cuidado*: Los campos de structs que comienzan por mayúscula, se consideran "public", y el resto, "private".
+- Además, como en el ejemplo, se pueden "anotar", para definir otras propiedades como, por ejemplo, el nombre del campo cuando se convierta a JSON.
+
+* Y ahora algo totalmente diferente
+.image intro/images/python1.png
+
+* ¡Structs!
+- Aunque Golang no es un lenguaje orientado a objetos, pero aún así permite "herencia múltiple", el llamado "embedding".
+  type Animal struct {
+    Nombre string
+  }
+  type Mascota struct {
+    Achuchable bool
+  }
+  type Perro struct {
+    Animal
+    Mascota
+    Raza TipoRaza
+  }
+
+- Podemos invocar cualquier método definido sobre "Animal" sobre un objeto de tipo Perro, así como acceder directamente a sus campos.
+
+  p := Perro{Nombre: "Yaky", Achuchable = true}
+
+* Funciones
+- Como hemos visto, es posible escribir funciones que devuelvan varios parámetros.
+- No sólo es posible, sino que es ampliamente utilizado y se considera parte del "Go-style".
+- Además, estos valores de retorno pueden tener opcionalmente un nombre.
+
+.play intro/code/func1.go /STARTMAIN/,/STOPMAIN/
+
+* Funciones
+- Del mismo modo, se pueden declarar y asignar varias variables a la vez.
+
+.play intro/code/func2.go /STARTMAIN/,/STOPMAIN/
+
+* Closures
+- Una de las mejores características del lenguaje, es su definición de las funciones como un tipo de dato más.
+- Además, las funciones "literales" son _closures_, de modo que capturan cualquier variable que haya en su _scope_ y pueden acceder a ella como si fuera propia.
+.play intro/code/func3.go /STARTMAIN/,/STOPMAIN/
+
+* Closures
+- Se pueden utilizar también para agrupar código, aunque no sea estrictamente necesario, a veces queda más limpio.
+
+  addIfExists := func(name, param string) {
+    value, ok := post[param]
+    if ok {
+      match[name] = bson.M{`$in`: value}
+    }
+  }
+
+  addIfExists(`sex`, `sex`)
+  addIfExists(`mstatus`, `mstatus`)
+  addIfExists(`influence_zones`, `influence`)
+  addIfExists(`type`, `proposal_types`)
+  addIfExists(`catid`, `categories`)
+  addIfExists(`comid`, `commerces`)
+
+* Y ahora algo totalmente diferente
+.image intro/images/python2.gif
+
+* Defer
+  status     := httpClient.Status()
+  resultJson := httpClient.Result()
+
+  if nil != httpClient.Error() || 200 != status {
+    httpClient.Close()
+    return
+  }
+
+  var result []interface{}
+  if err := json.Unmarshal(resultJson, &result); nil != err {
+    httpClient.Close()
+    return
+  }
+
+  if ! result[`success`] {
+    httpClient.Close()
+    return
+  }
+
+* Defer
+  status, resultJson, err := httpClient.Result()
+  defer httpClient.Close()
+
+  if nil != err || 200 != status {
+    return
+  }
+
+  var result []interface{}
+  if err := json.Unmarshal(resultJson, &result); nil != err {
+    return
+  }
+
+  if ! result[`success`] {
+    return
+  }
+
+* Concurrencia
+- Go provee de diversos mecanismos para manejar la concurrencia de forma adecuada.
+- Sobre todo, haremos uso de go-routinas y canales.
+- La filosofía es "Share memory by communicating".
+- Es importante no confundir concurrencia con paralelismo.
+- Linux hasta la versión 2.0 no era paralelo, aunque si era concurrente.
+- El siguiente programa NO es paralelo, aunque sí concurrente.
+
+.play intro/code/channels1.go /STARTMAIN/,/STOPMAIN/
+
+* Un ejemplo real
+  func (exec *ParallelExecutor) Exec(f ParallelFunc) {
+    c := make(chan ParallelResponse)
+    conn, db := GetDBConn()
+
+    go func() {
+      defer func() {
+        if r := recover(); nil != r {
+          err, ok := r.(error)
+          if !ok {
+            err = fmt.Errorf("pkg: %v", r)
+          }
+          c <- ParallelResponse{nil, err}
+        }
+      }()
+      defer conn.Close()
+
+      result, err := f(db)
+      c <- ParallelResponse{result, err}
+    }()
+
+    exec.channels = append(exec.channels, c)
+  }
+
+* Y ahora algo totalmente diferente
+.image intro/images/python3.gif
+
+* Entorno Go
+- run: Ejecutar un programa "sin compilarlo".
+- vet: Buscar "problemas", algo parecido a findbugs.
+- fix: Reescribir sentencias para utilizar APIs más "modernas", se utiliza al actualizar Go a una nueva versión.
+- fmt: ¿Espacios o tabs? ¡Nunca más! Formatea con "go fmt".
+- pprof: ¿Donde pierde más tiempo mi programa? ¿Dónde consume más RAM?
+- doc: Generación automática de documentación.
+- test: Ejecutar los tests. También ejecuta benchmarks al pasarle el flag "-bench".
+- get: Descargar dependencias de un proyecto.
+- Flag "-race": Detector de condiciones de carrera, desde Go 1.1.
+
+* Deploy
+- En Go se recomienda colocar la URL en el import. De esta forma, "go get" puede descargar automáticamente las dependencias y colocarlas en el $GOPATH.
+  import (
+    log `github.com/cihub/seelog`
+    `labix.org/v2/mgo`
+  )
+
+- Golang compila estáticamente las dependencias.
+- El resultado es un ELF (o .exe, o...) listo para ejecutar en cualquier máquina, sin instalar nada más.
+
+* ¿Y esto se usa?
+- dl.google.com es un servidor Go.
+- Docker. Administrador de "containers" LXC.
+- Packer. Herramienta para crear imágenes de máquinas virtuales automáticamente.
+- Youtube. Liberó y utiliza Vitess, una herramienta Go para escalar MySQL.
+- 10gen. El servicio de backups de MongoDB está escrito en GO.
+- Bitly. Han liberado NSQ, una plataforma de mensajería en tiempo real.
+- pool.ntp.org. Ya dispone de servidores hechos en Go.
+- Y muchos, muchos otros.
+.link https://code.google.com/p/go-wiki/wiki/GoUsers
